@@ -14,13 +14,14 @@ import numpy as np
 '''
 
 class Node(object):
-	def __init__(self, data=0):
-		self.data = data
-		self.children = {}
+	def __init__(self, score=0):
+		self.score = score
+		self.moves = []
+		self.children = []
 
-	def add_child(self, key, obj):
-		self.chilren[key]=obj
-
+	def add_child(self, obj, moves):
+		self.chilren.append=obj
+		self.moves=moves
 
 class PlayingAgent:
 
@@ -72,6 +73,40 @@ class PlayingAgent:
 		for x in range(0,self.gen_limit):
 			self.randomize_weights(model_opponent)
 
+	def in_boundary(self,pos):
+		if pos[0] < 0 or pos[0] > 8:
+			return False
+		if pos[1] < 0 or pos[1] > 8:
+			return False
+		return True
+
+	def get_possible_moves(x,y,mover):
+		sur=[]
+		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
+			sur.append(( x-1, y-1 ))
+		if x<7 and y>0 and ((mover%2==0) or simulated_board[x][y]==2):
+			sur.append(( x+1, y-1 ))
+		if x<7 and y<7 and ((mover%2==0) or simulated_board[x][y]==2):
+			sur.append(( x+1, y+1 ))
+		if x>0 and y<7 and ((mover%2!=0) or simulated_board[x][y]==2):
+			sur.append(( x-1, y+1 ))
+
+	def get_jumps(x,y,mover):
+		ret = []
+		sur = []
+		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
+			sur.append(( x-1, y-1 ))
+		if x<7 and y>0 and ((mover%2==0) or simulated_board[x][y]==2):
+			sur.append(( x+1, y-1 ))
+		if x<7 and y<7 and ((mover%2==0) or simulated_board[x][y]==2):
+			sur.append(( x+1, y+1 ))
+		if x>0 and y<7 and ((mover%2!=0) or simulated_board[x][y]==2):
+			sur.append(( x-1, y+1 ))
+		for x in sur:
+			if simulated_board(x) < 0:
+				ret.append(x)
+		return [sur,ret]
+
 	def minmax(self, simulated_board, depth=2):
 
 		'''
@@ -95,26 +130,22 @@ class PlayingAgent:
 				# print str(x)+" "+str(y)+" "+str(simulated_board[x][y])
 				if simulated_board[x][y] != 5 and simulated_board[x][y] > 0:
 					coins=coins-1
-					sur=[]
 					playing_coin = (x,y)
-					if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
-						sur.append(( x-1, y-1 ))
-					if x<7 and y>0 and ((mover%2==0) or simulated_board[x][y]==2):
-						sur.append(( x+1, y-1 ))
-					if x<7 and y<7 and ((mover%2==0) or simulated_board[x][y]==2):
-						sur.append(( x+1, y+1 ))
-					if x>0 and y<7 and ((mover%2!=0) or simulated_board[x][y]==2):
-						sur.append(( x-1, y+1 ))
+
+					moves = get_jumps(x,y,mover)
+					jumps = moves[1]
+					moves = moves[0]
+
 
 board = np.array([
 	[ 1, 5, 1, 5, 1, 5, 1, 5],
 	[ 5, 1, 5, 1, 5, 1, 5, 1],
-	[ 0, 5, 0, 5, 0, 5, 0, 5],
+	[ 1, 5, 1, 5, 1, 5, 1, 5],
 	[ 5, 0, 5, 0, 5, 0, 5, 0],
 	[ 0, 5, 0, 5, 0, 5, 0, 5],
-	[ 5, 0, 5, 0, 5, 0, 5, 0],
 	[ 5,-1, 5,-1, 5,-1, 5,-1],
-	[-1, 5,-1, 5,-1, 5,-1, 5]
+	[-1, 5,-1, 5,-1, 5,-1, 5],
+	[ 5,-1, 5,-1, 5,-1, 5,-1]
 ])
 
 my_nn = PlayingAgent()
