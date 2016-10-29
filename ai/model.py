@@ -13,17 +13,22 @@ import numpy as np
 		2 - opponent king coin
 '''
 
-class Node(object):
-	def __init__(self, score=0):
-		self.score = score
-		self.moves = []
-		self.children = []
-
-	def add_child(self, obj, moves):
-		self.chilren.append=obj
-		self.moves=moves
-
 class PlayingAgent:
+
+# Class for tree creation
+	class Node(object):
+		def __init__(self, score=0):
+			self.score = score
+			self.moves = []
+			self.jumps = []
+			self.children = []
+			self.parent = None
+
+		def add_child(self, obj):
+			self.children.append=obj
+
+		def set_parent(self,obj):
+			self.parent = obj
 
 	def __init__(self):
 		self.seed = 100
@@ -74,37 +79,96 @@ class PlayingAgent:
 			self.randomize_weights(model_opponent)
 
 	def in_boundary(self,pos):
-		if pos[0] < 0 or pos[0] > 8:
+		if pos[0] < 0 or pos[0] > 7:
 			return False
-		if pos[1] < 0 or pos[1] > 8:
+		if pos[1] < 0 or pos[1] > 7:
 			return False
 		return True
 
-	def get_possible_moves(x,y,mover):
-		sur=[]
-		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
-			sur.append(( x-1, y-1 ))
-		if x<7 and y>0 and ((mover%2==0) or simulated_board[x][y]==2):
-			sur.append(( x+1, y-1 ))
-		if x<7 and y<7 and ((mover%2==0) or simulated_board[x][y]==2):
-			sur.append(( x+1, y+1 ))
-		if x>0 and y<7 and ((mover%2!=0) or simulated_board[x][y]==2):
-			sur.append(( x-1, y+1 ))
+	def exec_move(self, sim_board, start, end):
+		sim_board = np.array(sim_board)
+		moving_coin = sim_board.item(start)
+		sim_board[start] = 0
+		sim_board[end] = moving_coin
+		
+		mov_vector = np.subtract(end,start)
 
-	def get_jumps(x,y,mover):
-		ret = []
-		sur = []
+		if abs(mov_vector[0]) == 2:
+			cut_position = tuple(np.add(start,np.divide(mov_vector,2)))
+			sim_board[cut_position] = 0
+
+		return sim_board
+
+	def get_possible_moves(self,simulated_board,x,y,mover):
+		ret = []	#ret value for jump
+		sur = []	#ret value for single cell hop
+		
+		# print str(x)+","+str(y)
+		# print simulated_board
+		# print "\n"
+
 		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
-			sur.append(( x-1, y-1 ))
+			
+			if simulated_board.item(x-1, y-1)==0:
+				sur.append(( x-1, y-1 ))
+			
+			elif simulated_board.item(x-1, y-1)<0:
+				target = (x-2,y-2)
+
+				if self.in_boundary(target) and simulated_board.item(target) == 0:
+					ret.append(target)
+					
+					sim_temp = self.exec_move(simulated_board,(x,y),target)
+					temp_ret = self.get_possible_moves(sim_temp,target[0],target[1],mover)
+					
+					if temp_ret[1]!=None and len(temp_ret[1]) > 0:
+						ret.append(temp_ret[1])
+						
 		if x<7 and y>0 and ((mover%2==0) or simulated_board[x][y]==2):
-			sur.append(( x+1, y-1 ))
+			if simulated_board.item(x+1, y-1)==0:
+				sur.append(( x+1, y-1 ))
+			elif simulated_board.item(x+1, y-1)<0:
+				target = (x+2,y-2)
+
+				if self.in_boundary(target) and simulated_board.item(target) == 0:
+					ret.append(target)
+					
+					sim_temp = self.exec_move(simulated_board,(x,y),target)
+					temp_ret = self.get_possible_moves(sim_temp,target[0],target[1],mover)
+					
+					if temp_ret[1]!=None and len(temp_ret[1]) > 0:
+						ret.append(temp_ret[1])
+					
 		if x<7 and y<7 and ((mover%2==0) or simulated_board[x][y]==2):
-			sur.append(( x+1, y+1 ))
+			if simulated_board.item(x+1, y+1)==0:
+				sur.append(( x+1, y+1 ))
+			elif simulated_board.item(x+1, y+1)<0:
+				target = (x+2,y+2)
+
+				if self.in_boundary(target) and simulated_board.item(target) == 0:
+					ret.append(target)
+					
+					sim_temp = self.exec_move(simulated_board,(x,y),target)
+					temp_ret = self.get_possible_moves(sim_temp,target[0],target[1],mover)
+
+					if ret!=None and len(temp_ret[1]) > 0:
+						ret.append(temp_ret[1])
+						
 		if x>0 and y<7 and ((mover%2!=0) or simulated_board[x][y]==2):
-			sur.append(( x-1, y+1 ))
-		for x in sur:
-			if simulated_board(x) < 0:
-				ret.append(x)
+			if simulated_board.item(x-1, y+1)==0:
+				sur.append(( x-1, y+1 ))
+			elif simulated_board.item(x-1, y+1)<0:
+				target = (x-2,y+2)
+
+				if self.in_boundary(target) and simulated_board.item(target) == 0:
+					ret.append(target)
+
+					sim_temp = self.exec_move(simulated_board,(x,y),target)
+					temp_ret = self.get_possible_moves(sim_temp,target[0],target[1],mover)
+					
+					if temp_ret[1]!=None and len(temp_ret[1]) > 0:
+						ret.append(temp_ret[1])
+		# print [sur,ret]
 		return [sur,ret]
 
 	def minmax(self, simulated_board, depth=2):
@@ -119,35 +183,39 @@ class PlayingAgent:
 		current_move = [];
 		sim_score=0
 		mover=0
-		coins = 8
+		coins = 12
 
 		Tree = Node()
+		current_node = Tree
 
+		jumps_present = False
+		
 		for x in range(0,8):
 			if coins <= 0:
 				break;
 			for y in range(0,8):
-				# print str(x)+" "+str(y)+" "+str(simulated_board[x][y])
 				if simulated_board[x][y] != 5 and simulated_board[x][y] > 0:
 					coins=coins-1
 					playing_coin = (x,y)
 
-					moves = get_jumps(x,y,mover)
+					moves = self.get_possible_moves(simulated_board,x,y,mover)
 					jumps = moves[1]
 					moves = moves[0]
-
 
 board = np.array([
 	[ 1, 5, 1, 5, 1, 5, 1, 5],
 	[ 5, 1, 5, 1, 5, 1, 5, 1],
 	[ 1, 5, 1, 5, 1, 5, 1, 5],
-	[ 5, 0, 5, 0, 5, 0, 5, 0],
+	[ 5, 0, 5,-1, 5, 0, 5, 0],
 	[ 0, 5, 0, 5, 0, 5, 0, 5],
 	[ 5,-1, 5,-1, 5,-1, 5,-1],
-	[-1, 5,-1, 5,-1, 5,-1, 5],
+	[-1, 5,-1, 5, 0, 5, 0, 5],
 	[ 5,-1, 5,-1, 5,-1, 5,-1]
 ])
 
-my_nn = PlayingAgent()
+ai_agent = PlayingAgent()
 
-my_nn.minmax(board,4)
+# my_nn.minmax(board,4)
+# print my_nn.exec_move(board,(2,0),(3,1))
+
+print ai_agent.get_possible_moves(board,2,2,2)
