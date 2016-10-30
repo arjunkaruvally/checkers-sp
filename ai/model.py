@@ -1,7 +1,9 @@
-from keras.models import Sequential
-from keras.layers import Dense, Activation
-from keras.optimizers import SGD
+from NeuralNetwork import NeuralNetwork
+from Tree import Node
 import numpy as np
+
+import math
+import random
 
 '''
 	Game Board Legend
@@ -14,69 +16,16 @@ import numpy as np
 '''
 
 class PlayingAgent:
+	def __init__(self,gen_limit = 5000):
+		self.tinsley_net = NeuralNetwork()
+		self.tinsley_net.set_random_seed(1354)
+		self.tinsley_net.randomize_weights()
 
-# Class for tree creation
-	class Node(object):
-		def __init__(self, score=0):
-			self.score = score
-			self.moves = []
-			self.jumps = []
-			self.children = []
-			self.parent = None
+		self.lindus_net = NeuralNetwork()
+		self.lindus_net.set_random_seed(9854)
+		self.lindus_net.randomize_weights()
 
-		def add_child(self, obj):
-			self.children.append=obj
-
-		def set_parent(self,obj):
-			self.parent = obj
-
-	def __init__(self):
-		self.seed = 100
-		self.current_gen = 0
-		self.gen_limit=100
-		self.hidden_layers=3
-		self.layer_nodes=32
-		self.model = Sequential()
-		self.rand_gen = np.random.RandomState(self.seed)
-
-		for x in range(0,self.hidden_layers-1):
-			self.model.add(Dense(self.layer_nodes, activation='sigmoid', input_dim=32, bias=True))		
-		self.model.add(Dense(1, activation='sigmoid', bias=True))
-
-		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-		self.model.compile(loss='mean_squared_error', optimizer=sgd)
-
-	def randomize_weights(self,model):
-		for x in range(0,self.hidden_layers-1):
-			dum_weight = np.zeros((self.layer_nodes,))
-			model_weights = self.rand_gen.rand(self.layer_nodes,self.layer_nodes)
-			model_weights = np.subtract(model_weights,0.5)
-			model.layers[x].set_weights([model_weights,dum_weight])
-					
-		dum_weight = np.zeros((1,))		
-		model_weights = self.rand_gen.rand(self.layer_nodes,1)
-		model.layers[2].set_weights([model_weights,dum_weight])
-		
-
-	def get_heuristic_cost(self,board_config):
-		output_pre = self.model.predict(self, board_config, batch_size=1, verbose=0)
-		return output_pre
-
-	def train(self):
-		self.randomize_weights(self.model)
-		print self.model.layers[0].get_weights()
-		model_opponent = Sequential()
-		
-		for x in range(0,self.hidden_layers-1):
-			model_opponent.add(Dense(self.layer_nodes, activation='sigmoid', input_dim=32, bias=True))
-
-		model_opponent.add(Dense(1, activation='sigmoid', bias=True))
-
-		sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-		model_opponent.compile(loss='mean_squared_error', optimizer=sgd)
-
-		for x in range(0,self.gen_limit):
-			self.randomize_weights(model_opponent)
+		self.gen_limit = gen_limit
 
 	def in_boundary(self,pos):
 		if pos[0] < 0 or pos[0] > 7:
@@ -102,10 +51,6 @@ class PlayingAgent:
 	def get_possible_moves(self,simulated_board,x,y,mover):
 		ret = []	#ret value for jump
 		sur = []	#ret value for single cell hop
-		
-		# print str(x)+","+str(y)
-		# print simulated_board
-		# print "\n"
 
 		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
 			
@@ -171,51 +116,142 @@ class PlayingAgent:
 		# print [sur,ret]
 		return [sur,ret]
 
-	def minmax(self, simulated_board, depth=2):
+	def get_jump_combinations(self, jumps):
+		
+		a = []
+
+		for x in range(0,len(jumps)):
+			
+			if str(type(jumps[x])) == "<type 'list'>":
+				v = a.pop()
+				b = self.get_jump_combinations(jumps[x])
+
+				for y in range(0,len(b)):
+					if str(type(v)) == "<type 'tuple'>":
+						if str(type(b[y])) == "<type 'tuple'>":
+							b[y] = [ v, b[y] ]
+						else:
+							b[y] = [ v ] + b[y]
+					else:
+						if str(type(b[y])) == "<type 'tuple'>":
+							b[y] = v.append(b[y])
+						else:
+							b[y] = v + b[y]
+				a = a+b
+			else:
+				a.append(jumps[x])
+		return a
+
+	def get_optimum_move(self,tree,depth,max_depth):
+
+		if depth == max_depth:
+			return [ 0, [] ]
+
+		score = 0
+		index = []
+		max = 0
+
+		for x in range(0,len(tree.children)):
+			ret = self.get_optimum_move(tree.children[x],depth+1,max_depth)
+			score = tree.children[x].score - ret[0] 
+
+			if x == 0:
+				max = score
+				index = [0]
+			elif score > max:
+				max = score
+				index = [x]
+			elif score == max:
+				index.append(x)
+
+		index = random.choice(index)
+
+		return [ score, tree.children[index].moves ]
+
+	def minmax(self, simulated_board, mover=0, depth=2):
 
 		'''
 			- global moves array(2D)
 			- 2nd dimension is the current move
 		'''
 
-		print 'minmax'
-
-		current_move = [];
-		sim_score=0
-		mover=0
-		coins = 12
-
-		Tree = Node()
-		current_node = Tree
-
-		jumps_present = False
+		self.Tree = Node(simulated_board = simulated_board)
+		# current_node = self.Tree
+		# root_node = self.Tree
+		# current_node.simulated_board = simulated_board
 		
-		for x in range(0,8):
-			if coins <= 0:
-				break;
-			for y in range(0,8):
-				if simulated_board[x][y] != 5 and simulated_board[x][y] > 0:
-					coins=coins-1
-					playing_coin = (x,y)
+		stack = []
+		stack.append(self.Tree)
 
-					moves = self.get_possible_moves(simulated_board,x,y,mover)
-					jumps = moves[1]
-					moves = moves[0]
+		while len(stack) > 0:
+
+			current_node = stack.pop()
+			simulated_board = current_node.simulated_board
+
+			for x in range(0,8):
+				for y in range(0,8):
+					if simulated_board[x][y] != 5 and simulated_board[x][y] > 0:
+						playing_coin = (x,y)
+
+						moves = self.get_possible_moves(simulated_board,x,y,mover)
+						jumps = moves[1]
+						moves = moves[0]
+						
+						if len(jumps) > 0:
+							moves = self.get_jump_combinations(jumps)
+
+						for move in moves:
+							temp_sim = np.array(simulated_board)	
+							if str(type(move)) == "<type 'tuple'>":
+								temp_sim = self.exec_move(simulated_board,(x,y),move)
+								move = [move]
+							else:
+								source = (x,y)
+								for z in move:
+									temp_sim = self.exec_move(temp_sim,source,z)
+									source = z
+							move = [(x,y)] + move
+
+							board_config = []
+							
+							for r in temp_sim:
+								for c in r:
+									if c != 5:
+										board_config.append(c)
+							if mover == 0:
+								heuristic_cost = self.tinsley_net.get_heuristic_cost(board_config)
+							else:
+								heuristic_cost = self.lindus_net.get_heuristic_cost(board_config)
+							
+							self.node = Node(score=heuristic_cost, moves=move, simulated_board=temp_sim)
+							self.node.set_parent(current_node)
+							current_node.add_child(self.node)
+			
+			if current_node.depth < depth-1:
+				for x in current_node.children:
+					stack.append(x)
+		
+		return self.get_optimum_move(self.Tree,0,3)
+
+		# return self.Tree 	
 
 board = np.array([
 	[ 1, 5, 1, 5, 1, 5, 1, 5],
 	[ 5, 1, 5, 1, 5, 1, 5, 1],
 	[ 1, 5, 1, 5, 1, 5, 1, 5],
-	[ 5, 0, 5,-1, 5, 0, 5, 0],
+	[ 5, 0, 5, 0, 5, 0, 5, 0],
 	[ 0, 5, 0, 5, 0, 5, 0, 5],
 	[ 5,-1, 5,-1, 5,-1, 5,-1],
-	[-1, 5,-1, 5, 0, 5, 0, 5],
+	[-1, 5,-1, 5,-1, 5,-1, 5],
 	[ 5,-1, 5,-1, 5,-1, 5,-1]
 ])
 
 ai_agent = PlayingAgent()
 
-# my_nn.minmax(board,4)
+ai_agent.minmax(board,0,3)
 # print my_nn.exec_move(board,(2,0),(3,1))
+# print ai_agent.get_possible_moves(board,0,0,2)
 
-print ai_agent.get_possible_moves(board,2,2,2)
+# jumps = [(2, 2), [(4, 0), [(6, 2)], (4, 4), [(6, 2), (6, 6)]]]
+
+# print ai_agent.get_jump_combinations_1(jumps)
