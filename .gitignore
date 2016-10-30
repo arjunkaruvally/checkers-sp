@@ -87,3 +87,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+#neural net parameter
+ai/neural_net/
+ai/evolution/

@@ -1,5 +1,7 @@
 from NeuralNetwork import NeuralNetwork
 from Tree import Node
+from GeneticEvolution import GeneticEvolution
+
 import numpy as np
 
 import math
@@ -16,16 +18,15 @@ import random
 '''
 
 class PlayingAgent:
-	def __init__(self,gen_limit = 5000):
-		self.tinsley_net = NeuralNetwork()
-		self.tinsley_net.set_random_seed(1354)
-		self.tinsley_net.randomize_weights()
+	def __init__(self,population_limit=8):
 
-		self.lindus_net = NeuralNetwork()
-		self.lindus_net.set_random_seed(9854)
-		self.lindus_net.randomize_weights()
+		self.genetic_evolution = GeneticEvolution()
+		self.population_limit = population_limit
 
-		self.gen_limit = gen_limit
+	def init_generation(self):
+		print "Creating Population"
+		self.players = self.genetic_evolution.init_population(population_limit = self.population_limit)
+		print "Population created"
 
 	def in_boundary(self,pos):
 		if pos[0] < 0 or pos[0] > 7:
@@ -38,7 +39,13 @@ class PlayingAgent:
 		sim_board = np.array(sim_board)
 		moving_coin = sim_board.item(start)
 		sim_board[start] = 0
-		sim_board[end] = moving_coin
+
+		if end[1] == 7 and moving_coin > 0:
+			sim_board[end] = 2
+		elif end[1] == 0 and moving_coin < 0:
+			sim_board[end] = -2
+		else:
+			sim_board[end] = moving_coin
 		
 		mov_vector = np.subtract(end,start)
 
@@ -164,16 +171,21 @@ class PlayingAgent:
 			elif score == max:
 				index.append(x)
 
-		index = random.choice(index)
+		if len(index) > 0:
+			index = random.choice(index)
+			return [ score, tree.children[index].moves ]
+		else:
+			return [0 , []]
 
-		return [ score, tree.children[index].moves ]
-
-	def minmax(self, simulated_board, mover=0, depth=2):
+	def minmax(self, simulated_board, mover=0, depth=2, player1=0, player2=1):
 
 		'''
+			- keep mover as always zero and invert players for consistency in using neural network
 			- global moves array(2D)
 			- 2nd dimension is the current move
 		'''
+
+		simulated_board = np.array(simulated_board)
 
 		self.Tree = Node(simulated_board = simulated_board)
 		# current_node = self.Tree
@@ -219,9 +231,9 @@ class PlayingAgent:
 									if c != 5:
 										board_config.append(c)
 							if mover == 0:
-								heuristic_cost = self.tinsley_net.get_heuristic_cost(board_config)
+								heuristic_cost = self.players[player1].get_heuristic_cost(board_config)
 							else:
-								heuristic_cost = self.lindus_net.get_heuristic_cost(board_config)
+								heuristic_cost = self.players[player2].get_heuristic_cost(board_config)
 							
 							self.node = Node(score=heuristic_cost, moves=move, simulated_board=temp_sim)
 							self.node.set_parent(current_node)
@@ -230,25 +242,173 @@ class PlayingAgent:
 			if current_node.depth < depth-1:
 				for x in current_node.children:
 					stack.append(x)
+
+		# self.Tree.inorder(self.Tree)
 		
-		return self.get_optimum_move(self.Tree,0,3)
+		return self.get_optimum_move(self.Tree,0,depth)
 
-		# return self.Tree 	
+	def invert_board(self, board):
+		
+		board = np.array(board)
 
-board = np.array([
-	[ 1, 5, 1, 5, 1, 5, 1, 5],
-	[ 5, 1, 5, 1, 5, 1, 5, 1],
-	[ 1, 5, 1, 5, 1, 5, 1, 5],
-	[ 5, 0, 5, 0, 5, 0, 5, 0],
-	[ 0, 5, 0, 5, 0, 5, 0, 5],
-	[ 5,-1, 5,-1, 5,-1, 5,-1],
-	[-1, 5,-1, 5,-1, 5,-1, 5],
-	[ 5,-1, 5,-1, 5,-1, 5,-1]
-])
+		for x in range(0,8):
+			for y in range(0,8):
+				if board[x][y] != 5:
+					board[x][y] = -1 * board[x][y]
 
-ai_agent = PlayingAgent()
+		board = np.rot90(board,2)
 
-ai_agent.minmax(board,0,3)
+		return board
+
+	def tournament(self, maxium_game_moves=100):
+
+		for x in range(0,self.population_limit):
+			self.players[x].reset_fitness()
+
+		x = range(0,self.population_limit)
+
+		# for x in range(0, self.population_limit, 2):
+
+		print "-------------------tournament started---------------------"
+
+		while len(x) > 1:
+
+			player1_index = x.pop()
+			player2_index = x.pop()
+
+			print "\ngame player1 "+str(player1_index)+" game player2 "+str(player2_index)
+
+			board = np.array([
+				[ 1, 5, 1, 5, 1, 5, 1, 5],
+				[ 5, 1, 5, 1, 5, 1, 5, 1],
+				[ 1, 5, 1, 5, 1, 5, 1, 5],
+				[ 5, 0, 5, 0, 5, 0, 5, 0],
+				[ 0, 5, 0, 5, 0, 5, 0, 5],
+				[ 5,-1, 5,-1, 5,-1, 5,-1],
+				[-1, 5,-1, 5,-1, 5,-1, 5],
+				[ 5,-1, 5,-1, 5,-1, 5,-1]
+			]);
+
+			draw = False;
+
+			for y in range(0,maxium_game_moves):
+				# player1 = x + (y%2)
+				# player2 = x + ((player1+1)%2)
+
+				if y%2 == 0:
+					player1 = player1_index
+					player2 = player2_index
+				else:
+					player1 = player2_index
+					player2 = player1_index
+
+				ret = self.minmax(board,player1=player1,player2=player2)
+				
+				if len(ret[1]) < 2:
+					# print "game end"
+					print "winner: "+str(player2)
+					print "moves : "+str(y)
+					# print board
+					x.insert(0,player2)
+					# self.players[player1].fitness = self.players[player1].fitness + self.fitness_function(False)
+					self.players[player2].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					break
+
+				if y == maxium_game_moves-1 :
+					draw = True
+
+				# print "move "+str(y)
+				# print "player "+str(player1)
+				# print "opponent "+str(player2)
+				# print "moves"
+
+				for z in range(0,len(ret[1])-1):
+					# print "from"
+					# print ret[1][z]
+					# print "to"
+					# print ret[1][z+1]
+					board = self.exec_move(board, ret[1][z], ret[1][z+1])
+				
+				# print "board "
+				# print board
+
+				board = self.invert_board(board)
+
+			if draw:
+				print "game draw"
+				if self.players[player1_index].fitness > self.players[player2_index].fitness:
+					print "choosing "+str(player1_index)
+					x.insert(0,player1_index)
+				elif self.players[player1_index].fitness < self.players[player2_index].fitness:
+					print "choosing "+str(player2_index)
+					x.insert(0,player2_index)
+				else:
+					prob = np.random.rand()
+					if prob < 0.5:
+						print "choosing "+str(player1_index)
+						x.insert(0,player1_index)
+					else:
+						print "choosing "+str(player2_index)
+						x.insert(0,player2_index)
+
+		print "tournament winner: "+str(x[0])
+		# return x[0]
+
+	def trainer(self,gen_limit=100):
+
+		while True:
+			current_generation = self.genetic_evolution.generation
+			print "Generation : "+str(current_generation)
+			self.tournament(300)
+			for x in range(0,self.population_limit):
+				print str(x)+" : "+str(self.players[x].fitness)
+
+			self.save_evolution()
+			self.players = self.genetic_evolution.get_next_generation()
+			# current_generation = current_generation+1
+
+	def load_saved_evolution(self, file_path = "neural_net/saved_net_"):
+		print "Loading saved evolution"
+		
+		file = open(file_path+"generations","r")
+		gen = file.read()
+		gen = gen.split(",")
+
+		max_gen = 0
+
+		for x in range(0,len(self.players)):
+			self.players[x].model.load_weights(file_path+str(x))
+			gen[x] = int(gen[x])
+			self.players[x].generation = gen[x]
+			if gen[x] > max_gen:
+				max_gen = gen[x]
+
+		self.genetic_evolution.population = self.players
+		self.genetic_evolution.generation = max_gen	
+		print "Load Complete"
+
+	def save_evolution(self, file_path="neural_net/saved_net_"):
+		print "Saving evolution"
+
+		generations = []
+
+		for x in range(0,len(self.players)):
+			self.players[x].model.save_weights(file_path+str(x))
+			generations.append(str(self.players[x].generation))
+		
+		file = open(file_path+"generations", 'w')
+		file.write(",".join(generations))
+		file.close()
+
+		print "Save Complete"
+
+ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
+
+ai_agent.init_generation()
+# ai_agent.load_saved_evolution()
+ai_agent.trainer(gen_limit=2)
+
+# print ai_agent.minmax(board,0,3)
 # print my_nn.exec_move(board,(2,0),(3,1))
 # print ai_agent.get_possible_moves(board,0,0,2)
 

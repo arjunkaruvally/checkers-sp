@@ -4,6 +4,7 @@
 ###### Requirements without Version Specifiers ######
 keras
 tensorflow
+h5py
 #
 
 ###### Requirements with Version Specifiers ######
