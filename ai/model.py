@@ -297,6 +297,7 @@ class PlayingAgent:
 				# player2 = x + ((player1+1)%2)
 				sys.stdout.write(" moves %d/%d \r" % (y,maxium_game_moves))
 				sys.stdout.flush()
+				# print "\n"
 
 				if y%2 == 0:
 					player1 = player1_index
@@ -309,6 +310,7 @@ class PlayingAgent:
 				
 				if len(ret[1]) < 2:
 					# print "game end"
+					print "\n"
 					print "winner: "+str(player2)
 					print "moves : "+str(y)
 					# print board
@@ -338,6 +340,7 @@ class PlayingAgent:
 				board = self.invert_board(board)
 
 			if draw:
+				print "\n"
 				print "game draw"
 				if self.players[player1_index].fitness > self.players[player2_index].fitness:
 					print "choosing "+str(player1_index)
