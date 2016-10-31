@@ -290,7 +290,8 @@ class PlayingAgent:
 				[ 5,-1, 5,-1, 5,-1, 5,-1]
 			]);
 
-			draw = False;
+			board_f = False
+			draw = False
 
 			for y in range(0,maxium_game_moves):
 				# player1 = x + (y%2)
@@ -338,27 +339,61 @@ class PlayingAgent:
 				# print board
 
 				board = self.invert_board(board)
+				board_f = not board_f
 
 			if draw:
 				print "\n"
 				print "game draw"
-				if self.players[player1_index].fitness > self.players[player2_index].fitness:
-					print "choosing "+str(player1_index)
+				print board_f
+				
+				coins1 = self.get_coins(board, positive=True)
+				coins2 = self.get_coins(board, positive=False)
+
+				if coins1[0] > coins2[0]:
+					print "winner : "+str(player1_index)
 					x.insert(0,player1_index)
-				elif self.players[player1_index].fitness < self.players[player2_index].fitness:
-					print "choosing "+str(player2_index)
+				elif coins1[0] < coins2[0]:
+					print "winner : "+str(player2_index)
+					x.insert(0,player2_index)
+				elif coins1[1] > coins2[1]:
+					print "winner : "+str(player1_index)
+					x.insert(0,player1_index)
+				elif coins1[1] < coins2[1]:
+					print "winner : "+str(player2_index)
 					x.insert(0,player2_index)
 				else:
-					prob = np.random.rand()
-					if prob < 0.5:
-						print "choosing "+str(player1_index)
+					if self.players[player1_index].fitness > self.players[player2_index].fitness:
+						print "winner by fitness "+str(player1_index)
 						x.insert(0,player1_index)
-					else:
-						print "choosing "+str(player2_index)
+					elif self.players[player1_index].fitness < self.players[player2_index].fitness:
+						print "winner by fitness "+str(player2_index)
 						x.insert(0,player2_index)
+					else:
+						prob = np.random.rand()
+						if prob < 0.5:
+							print "choosing "+str(player1_index)
+							x.insert(0,player1_index)
+						else:
+							print "choosing "+str(player2_index)
+							x.insert(0,player2_index)
 
 		print "tournament winner: "+str(x[0])
 		# return x[0]
+
+	def get_coins(self, board, positive=True):
+		coins = 0
+		kings = 0
+		for x in range(0,7):
+			for y in range(0,7):
+				if board[x][y]!=5 and positive and board[x][y] > 0:
+					coins = coins+1
+					if board[x][y] == 2:
+						kings = kings+1
+				elif board[x][y]!=5 and (not positive) and board[x][y] < 0:
+					coins = coins+1
+					if board[x][y] == -2:
+						kings = kings+1
+		return [coins, kings]
 
 	def trainer(self,gen_limit=100):
 
@@ -373,7 +408,7 @@ class PlayingAgent:
 			self.players = self.genetic_evolution.get_next_generation()
 			# current_generation = current_generation+1
 
-	def load_saved_evolution(self, file_path = "neural_net/saved_net_"):
+	def load_saved_evolution(self, file_path = "neural_net_test/saved_net_"):
 		print "Loading saved evolution"
 		
 		file = open(file_path+"generations","r")
@@ -393,7 +428,7 @@ class PlayingAgent:
 		self.genetic_evolution.generation = max_gen	
 		print "Load Complete"
 
-	def save_evolution(self, file_path="neural_net/saved_net_"):
+	def save_evolution(self, file_path="neural_net_test/saved_net_"):
 		print "Saving evolution"
 
 		generations = []
@@ -411,7 +446,7 @@ class PlayingAgent:
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
-ai_agent.load_saved_evolution()
+# ai_agent.load_saved_evolution()
 ai_agent.trainer(gen_limit=2)
 
 # print ai_agent.minmax(board,0,3)
