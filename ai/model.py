@@ -307,6 +307,8 @@ class PlayingAgent:
 		print "-------------------tournament started---------------------"
 
 		game_number=0
+		number_draws=0
+		number_wins=0
 		while len(x) > 1:
 			game_number = game_number+1
 			player1_index = x.pop()
@@ -348,6 +350,7 @@ class PlayingAgent:
 				
 				if len(ret[1]) < 2:
 					# print "game end"
+					number_wins = number_wins+1
 					print "\n"
 					print "winner: "+str(player2)
 					print "moves : "+str(y)
@@ -381,6 +384,7 @@ class PlayingAgent:
 			if draw:
 				print "\n"
 				print "game draw"
+				number_draws = number_draws+1
 				# print board_f
 				
 				coins1 = self.get_coins(board, positive=True)
@@ -422,7 +426,12 @@ class PlayingAgent:
 			# else:
 			# 	print self.invert_board(board)
 
-		print "tournament winner: "+str(x[0])
+		print "tournament summary"
+		print "winner: "+str(x[0])
+		print "matches played: 7"
+		print "matches drawn: "+number_draws
+		print "matches not draw: "+number_wins
+
 		# return x[0]
 
 	def get_coins(self, board, positive=True):
