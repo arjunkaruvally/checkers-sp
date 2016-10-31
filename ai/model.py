@@ -41,9 +41,9 @@ class PlayingAgent:
 		moving_coin = sim_board.item(start)
 		sim_board[start] = 0
 
-		if end[1] == 7 and moving_coin > 0:
+		if end[0] == 7 and moving_coin > 0:
 			sim_board[end] = 2
-		elif end[1] == 0 and moving_coin < 0:
+		elif end[0] == 0 and moving_coin < 0:
 			sim_board[end] = -2
 		else:
 			sim_board[end] = moving_coin
@@ -60,6 +60,7 @@ class PlayingAgent:
 		ret = []	#ret value for jump
 		sur = []	#ret value for single cell hop
 
+#abs(sim_board) == 2
 		if x>0 and y>0 and ((mover%2!=0) or simulated_board[x][y]==2):
 			
 			if simulated_board.item(x-1, y-1)==0:
@@ -150,31 +151,59 @@ class PlayingAgent:
 				a.append(jumps[x])
 		return a
 
-	def get_optimum_move(self,tree,depth,max_depth):
+	def get_optimum_move(self, tree, depth, max_depth, alpha=-500, beta=500, maximising_player=True):
 
-		if depth == max_depth:
-			return [ 0, [] ]
+		# if depth == max_depth:
+		# 	return [ 0, [] ]
 
-		score = 0
-		index = []
+		if len(tree.children) <= 0 or depth == max_depth:
+			return [ tree.score, tree.moves ]
+
+		req_score = 0
+		req_index = []
 		max = 0
 
-		for x in range(0,len(tree.children)):
-			ret = self.get_optimum_move(tree.children[x],depth+1,max_depth)
-			score = tree.children[x].score - ret[0] 
+		for x in range(0,len(tree.children)):			
+			ret = self.get_optimum_move(tree.children[x], depth+1, max_depth, alpha, beta, not maximising_player)
+			score = ret[0]
 
-			if x == 0:
-				max = score
-				index = [0]
-			elif score > max:
-				max = score
-				index = [x]
-			elif score == max:
-				index.append(x)
+			if maximising_player:
+				if x==0:
+					req_score = score
+					req_index = [0]
+				elif score > req_score:
+					req_score = score
+					req_index = [x]
+				elif score==req_score:
+					req_index.append(x)
 
-		if len(index) > 0:
-			index = random.choice(index)
-			return [ score, tree.children[index].moves ]
+				#alpha beta pruning
+				alpha = alpha if alpha>req_score else req_score
+				# alpha = max(alpha,req_score)
+				if beta <= alpha:
+					# print "beta cutoff\n"
+					break
+
+			else:
+				if x==0:
+					req_score = score
+					req_index = [0]
+				elif score < req_score:
+					req_score = score
+					req_index = [x]
+				elif score==req_score:
+					req_index.append(x)
+
+				#alpha beta pruning
+				beta = beta if beta<req_score else req_score
+				# beta = min(beta,req_score)
+				if beta <= alpha:
+					# print "alpha cutoff\n"
+					break
+
+		if len(req_index) > 0:
+			index = random.choice(req_index)
+			return [ req_score, tree.children[index].moves ]
 		else:
 			return [0 , []]
 
@@ -200,6 +229,10 @@ class PlayingAgent:
 
 			current_node = stack.pop()
 			simulated_board = current_node.simulated_board
+			current_player = current_node.current_player
+
+			if not current_player:
+				simulated_board = self.invert_board(simulated_board)
 
 			for x in range(0,8):
 				for y in range(0,8):
@@ -216,7 +249,7 @@ class PlayingAgent:
 						for move in moves:
 							temp_sim = np.array(simulated_board)	
 							if str(type(move)) == "<type 'tuple'>":
-								temp_sim = self.exec_move(simulated_board,(x,y),move)
+								temp_sim = self.exec_move(temp_sim,(x,y),move)
 								move = [move]
 							else:
 								source = (x,y)
@@ -231,10 +264,11 @@ class PlayingAgent:
 								for c in r:
 									if c != 5:
 										board_config.append(c)
-							if mover == 0:
-								heuristic_cost = self.players[player1].get_heuristic_cost(board_config)
-							else:
-								heuristic_cost = self.players[player2].get_heuristic_cost(board_config)
+							
+							heuristic_cost = self.players[player1].get_heuristic_cost(board_config)
+
+							if not current_player:
+								temp_sim = self.invert_board(temp_sim)
 							
 							self.node = Node(score=heuristic_cost, moves=move, simulated_board=temp_sim)
 							self.node.set_parent(current_node)
@@ -244,7 +278,7 @@ class PlayingAgent:
 				for x in current_node.children:
 					stack.append(x)
 
-		# self.Tree.inorder(self.Tree)
+		# self.Tree.postorder(self.Tree)
 		
 		return self.get_optimum_move(self.Tree,0,depth)
 
@@ -272,12 +306,15 @@ class PlayingAgent:
 
 		print "-------------------tournament started---------------------"
 
+		game_number=0
 		while len(x) > 1:
-
+			game_number = game_number+1
 			player1_index = x.pop()
 			player2_index = x.pop()
 
-			print "\ngame player1 "+str(player1_index)+" game player2 "+str(player2_index)
+			print "\n----------\ngame: "+str(game_number) 
+			print "player1: "+str(player1_index)
+			print "player2: "+str(player2_index)
 
 			board = np.array([
 				[ 1, 5, 1, 5, 1, 5, 1, 5],
@@ -290,13 +327,13 @@ class PlayingAgent:
 				[ 5,-1, 5,-1, 5,-1, 5,-1]
 			]);
 
-			board_f = False
+			board_f = True
 			draw = False
 
 			for y in range(0,maxium_game_moves):
 				# player1 = x + (y%2)
 				# player2 = x + ((player1+1)%2)
-				sys.stdout.write(" moves %d/%d \r" % (y,maxium_game_moves))
+				sys.stdout.write(" moves %d/%d \r" % (y+1,maxium_game_moves))
 				sys.stdout.flush()
 				# print "\n"
 
@@ -316,8 +353,8 @@ class PlayingAgent:
 					print "moves : "+str(y)
 					# print board
 					x.insert(0,player2)
-					# self.players[player1].fitness = self.players[player1].fitness + self.fitness_function(False)
 					self.players[player2].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					self.players[player1].fitness = self.players[player1].fitness + self.genetic_evolution.fitness_factor(False,moves=y)					
 					break
 
 				if y == maxium_game_moves-1 :
@@ -344,23 +381,27 @@ class PlayingAgent:
 			if draw:
 				print "\n"
 				print "game draw"
-				print board_f
+				# print board_f
 				
 				coins1 = self.get_coins(board, positive=True)
 				coins2 = self.get_coins(board, positive=False)
 
 				if coins1[0] > coins2[0]:
-					print "winner : "+str(player1_index)
+					print "winner by coins: "+str(player1_index)
 					x.insert(0,player1_index)
+					self.players[player1_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 				elif coins1[0] < coins2[0]:
-					print "winner : "+str(player2_index)
+					print "winner by coins: "+str(player2_index)
 					x.insert(0,player2_index)
+					self.players[player2_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 				elif coins1[1] > coins2[1]:
-					print "winner : "+str(player1_index)
+					print "winner by kings: "+str(player1_index)
 					x.insert(0,player1_index)
+					self.players[player1_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 				elif coins1[1] < coins2[1]:
-					print "winner : "+str(player2_index)
+					print "winner by kings: "+str(player2_index)
 					x.insert(0,player2_index)
+					self.players[player2_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 				else:
 					if self.players[player1_index].fitness > self.players[player2_index].fitness:
 						print "winner by fitness "+str(player1_index)
@@ -376,6 +417,10 @@ class PlayingAgent:
 						else:
 							print "choosing "+str(player2_index)
 							x.insert(0,player2_index)
+			# if board_f:
+			# 	print board
+			# else:
+			# 	print self.invert_board(board)
 
 		print "tournament winner: "+str(x[0])
 		# return x[0]
@@ -408,37 +453,51 @@ class PlayingAgent:
 			self.players = self.genetic_evolution.get_next_generation()
 			# current_generation = current_generation+1
 
-	def load_saved_evolution(self, file_path = "neural_net_test/saved_net_"):
+	def load_saved_evolution(self, file_path = "neural_net/saved_net_"):
 		print "Loading saved evolution"
 		
 		file = open(file_path+"generations","r")
 		gen = file.read()
 		gen = gen.split(",")
+		file.close()
+
+		file = open(file_path+"fitness","r")
+		fit = file.read()
+		fit = fit.split(",")
+		file.close()
 
 		max_gen = 0
 
 		for x in range(0,len(self.players)):
 			self.players[x].model.load_weights(file_path+str(x))
 			gen[x] = int(gen[x])
+			fit[x] = float(fit[x])
 			self.players[x].generation = gen[x]
 			if gen[x] > max_gen:
 				max_gen = gen[x]
 
 		self.genetic_evolution.population = self.players
-		self.genetic_evolution.generation = max_gen	
+		self.genetic_evolution.generation = max_gen
 		print "Load Complete"
+		self.players = self.genetic_evolution.get_next_generation()	
 
-	def save_evolution(self, file_path="neural_net_test/saved_net_"):
+	def save_evolution(self, file_path="neural_net/saved_net_"):
 		print "Saving evolution"
 
 		generations = []
+		fitness = []
 
 		for x in range(0,len(self.players)):
 			self.players[x].model.save_weights(file_path+str(x))
 			generations.append(str(self.players[x].generation))
+			fitness.append(str(self.players[x].fitness))
 		
 		file = open(file_path+"generations", 'w')
 		file.write(",".join(generations))
+		file.close()
+
+		file = open(file_path+"fitness", 'w')
+		file.write(",".join(fitness))
 		file.close()
 
 		print "Save Complete"
@@ -446,10 +505,10 @@ class PlayingAgent:
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
-# ai_agent.load_saved_evolution()
-ai_agent.trainer(gen_limit=2)
+ai_agent.load_saved_evolution()
+ai_agent.trainer()
 
-# print ai_agent.minmax(board,0,3)
+# print ai_agent.minmax(board,0,2)
 # print my_nn.exec_move(board,(2,0),(3,1))
 # print ai_agent.get_possible_moves(board,0,0,2)
 

@@ -91,3 +91,4 @@ ENV/
 #neural net parameter
 ai/neural_net/
 ai/evolution/
+ai/neural_net*

@@ -27,10 +27,9 @@ class GeneticEvolution:
 		if win:
 			fitness = 1.0 + (self.move_fitness_coefficient/moves)
 		else:
-			fitness = -2.0
+			fitness = -(self.move_fitness_coefficient/moves)
 		return fitness
 
-	# @classmethod
 	def mutate(self,x):
 		prob = np.random.rand()
 		mutated_val = x
