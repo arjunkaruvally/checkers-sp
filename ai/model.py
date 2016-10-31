@@ -6,6 +6,7 @@ import numpy as np
 
 import math
 import random
+import sys
 
 '''
 	Game Board Legend
@@ -294,6 +295,8 @@ class PlayingAgent:
 			for y in range(0,maxium_game_moves):
 				# player1 = x + (y%2)
 				# player2 = x + ((player1+1)%2)
+				sys.stdout.write(" moves %d/%d \r" % (y,maxium_game_moves))
+				sys.stdout.flush()
 
 				if y%2 == 0:
 					player1 = player1_index
@@ -302,7 +305,7 @@ class PlayingAgent:
 					player1 = player2_index
 					player2 = player1_index
 
-				ret = self.minmax(board,player1=player1,player2=player2)
+				ret = self.minmax(board,depth=3,player1=player1,player2=player2)
 				
 				if len(ret[1]) < 2:
 					# print "game end"
@@ -359,7 +362,7 @@ class PlayingAgent:
 		while True:
 			current_generation = self.genetic_evolution.generation
 			print "Generation : "+str(current_generation)
-			self.tournament(300)
+			self.tournament(200)
 			for x in range(0,self.population_limit):
 				print str(x)+" : "+str(self.players[x].fitness)
 
@@ -405,7 +408,7 @@ class PlayingAgent:
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
-# ai_agent.load_saved_evolution()
+ai_agent.load_saved_evolution()
 ai_agent.trainer(gen_limit=2)
 
 # print ai_agent.minmax(board,0,3)
