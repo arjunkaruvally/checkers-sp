@@ -7,7 +7,7 @@ class GeneticEvolution:
 	def __init__(self):
 
 		self.population = []
-		self.generation = 0
+		self.generation = 180
 
 		#evolution coefficients available for tuning
 		self.move_fitness_coefficient = 10.0

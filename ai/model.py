@@ -37,7 +37,7 @@ class PlayingAgent:
 
 	def exec_move(self, sim_board, start, end):
 		sim_board = np.array(sim_board)
-		moving_coin = sim_board.item(start)
+		moving_coin = sim_board[start]
 		sim_board[start] = 0
 
 		if end[0] == 7 and moving_coin > 0:
@@ -337,12 +337,6 @@ class PlayingAgent:
 			draw = False
 
 			for y in range(0,maxium_game_moves):
-				# player1 = x + (y%2)
-				# player2 = x + ((player1+1)%2)
-				sys.stdout.write(" moves %d/%d \r" % (y+1,maxium_game_moves))
-				sys.stdout.flush()
-				# print "\n"
-
 				if y%2 == 0:
 					player1 = player1_index
 					player2 = player2_index
@@ -350,15 +344,26 @@ class PlayingAgent:
 					player1 = player2_index
 					player2 = player1_index
 
+				# if y > 10:
+				# print board
+
+				coins1 = self.get_coins(board, positive=board_f)
+				coins2 = self.get_coins(board, positive=(not board_f))
+				sys.stdout.write("player1 %s player2 %s moves %d/%d     \r" % (str(coins1),str(coins2),y+1,maxium_game_moves))
+				# sys.stdout.write("moves %d/%d \r" % (y+1,maxium_game_moves))
+				sys.stdout.flush()
+				# print "\n"
+
 				ret = self.minmax(board,depth=3,player1=player1,player2=player2)
 				
 				if len(ret[1]) < 2:
 					# print "game end"
 					number_wins = number_wins+1
 					print "\n"
-					coins2 = self.get_coins(board, positive=True)
-					coins1 = self.get_coins(board, positive=False)
+					coins1 = self.get_coins(board, positive=True)
+					coins2 = self.get_coins(board, positive=False)
 					print "winner: "+str(player2)
+					# print board_f
 					print "winner coins : "+str(coins2)
 					print "loser coins : "+str(coins1)
 					print "moves : "+str(y)
@@ -371,16 +376,7 @@ class PlayingAgent:
 				if y == maxium_game_moves-1 :
 					draw = True
 
-				# print "move "+str(y)
-				# print "player "+str(player1)
-				# print "opponent "+str(player2)
-				# print "moves"
-
 				for z in range(0,len(ret[1])-1):
-					# print "from"
-					# print ret[1][z]
-					# print "to"
-					# print ret[1][z+1]
 					board = self.exec_move(board, ret[1][z], ret[1][z+1])
 				
 				# print "board "
@@ -461,8 +457,8 @@ class PlayingAgent:
 	def get_coins(self, board, positive=True):
 		coins = 0
 		kings = 0
-		for x in range(0,7):
-			for y in range(0,7):
+		for x in range(0,8):
+			for y in range(0,8):
 				if board[x][y]!=5 and positive and board[x][y] > 0:
 					coins = coins+1
 					if board[x][y] == 2:
@@ -538,7 +534,7 @@ class PlayingAgent:
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
-ai_agent.load_saved_evolution()
+# ai_agent.load_saved_evolution()
 ai_agent.trainer()
 
 board = np.array([
