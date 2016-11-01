@@ -1,0 +1,12 @@
+.black {
+	background-color: black;
+	height: 50px;
+	width: 50px;
+}
+#board {
+	border: 1px solid black;
+}
+.white {
+	height: 50px;
+	width: 50px;	
+}
