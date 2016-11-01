@@ -3,10 +3,27 @@
 	height: 50px;
 	width: 50px;
 }
+
 #board {
 	border: 1px solid black;
 }
+
 .white {
 	height: 50px;
 	width: 50px;	
+}
+
+.opponent-coin{
+	background-color:grey;
+	border-radius: 38px;
+	height: 50px;
+	width: 50px;
+	border: solid 2px white;
+}
+
+.player-coin{
+	background-color:red;
+	border-radius: 38px;
+	height: 50px; width: 50px;
+	border: solid 2px white;
 }

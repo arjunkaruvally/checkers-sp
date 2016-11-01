@@ -5,6 +5,7 @@
 keras
 tensorflow
 h5py
+flask
 #
 
 ###### Requirements with Version Specifiers ######

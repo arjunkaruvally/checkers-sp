@@ -319,8 +319,8 @@ class PlayingAgent:
 
 			print "\n----------\ngame: "+str(game_number)
 			print "generation: "+str(self.genetic_evolution.generation)
-			print "player1: "+str(player1_index)
-			print "player2: "+str(player2_index)
+			print "player1: "+str(player1_index)+"("+self.players[player1_index].tag+")"
+			print "player2: "+str(player2_index)+"("+self.players[player2_index].tag+")"
 
 			board = np.array([
 				[ 1, 5, 1, 5, 1, 5, 1, 5],
@@ -476,7 +476,7 @@ class PlayingAgent:
 			print "Generation : "+str(current_generation)
 			self.tournament(200)
 			for x in range(0,self.population_limit):
-				print str(x)+" : "+str(self.players[x].fitness)
+				print str(x)+"("+self.players[x].tag+") : "+str(self.players[x].fitness)
 
 			self.save_evolution()
 			self.players = self.genetic_evolution.get_next_generation()
@@ -513,16 +513,22 @@ class PlayingAgent:
 	def save_evolution(self, file_path="neural_net/saved_net_"):
 		print "Saving evolution"
 
+		tags = []
 		generations = []
 		fitness = []
 
 		for x in range(0,len(self.players)):
 			self.players[x].model.save_weights(file_path+str(x))
+			tags.append(str(self.players[x].tag))
 			generations.append(str(self.players[x].generation))
 			fitness.append(str(self.players[x].fitness))
-		
+
 		file = open(file_path+"generations", 'w')
 		file.write(",".join(generations))
+		file.close()
+
+		file = open(file_path+"attributes","w")
+		file.write(",".join(tags))
 		file.close()
 
 		file = open(file_path+"fitness", 'w')

@@ -56,6 +56,7 @@ class GeneticEvolution:
 		temp_pop = sorted(self.population, key=lambda nnet: nnet.fitness, reverse=True)
 
 		#Natural selection - survival of the fittest
+		temp_pop[0].tag = "alpha-gen: "+str(temp_pop[0].generation)
 		new_gen.append(temp_pop[0])
 
 		male_genes = new_gen[0].model.layers
@@ -81,6 +82,7 @@ class GeneticEvolution:
 				temp_pop[x].generation = self.generation
 				temp_pop[x].model.layers[y].set_weights([female_gene, sec_gene])
 
+			temp_pop[x].tag = "child "+str(x)
 			new_gen.append(temp_pop[x])
 		
 		print "crossover complete"
@@ -100,6 +102,7 @@ class GeneticEvolution:
 				temp_pop[x].generation = self.generation
 				temp_pop[x].model.layers[y].set_weights([female_gene, sec_gene])
 
+			temp_pop[x].tag = "mutant "+str(x)
 			new_gen.append(temp_pop[x])
 
 		print "mutation complete"

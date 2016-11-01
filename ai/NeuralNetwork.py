@@ -11,6 +11,7 @@ class NeuralNetwork:
 		self.model = Sequential()
 		self.fitness = 0.0
 		self.generation = 0
+		self.tag = ""
 
 		self.model.add(Dense(42, activation='tanh', input_dim=32, bias=True))
 		self.model.add(Dense(42, activation='tanh', bias=True))
