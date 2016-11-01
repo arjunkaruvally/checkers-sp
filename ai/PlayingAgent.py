@@ -221,6 +221,7 @@ class PlayingAgent:
 		# root_node = self.Tree
 		# current_node.simulated_board = simulated_board
 		
+		jumps_present = np.zeros(depth+1, dtype=bool)
 		stack = []
 		stack.append(self.Tree)
 
@@ -241,8 +242,14 @@ class PlayingAgent:
 						moves = self.get_possible_moves(simulated_board,x,y,mover)
 						jumps = moves[1]
 						moves = moves[0]
-						
+
+						if jumps_present[current_node.depth]:
+							moves = []
+
 						if len(jumps) > 0:
+							if not jumps_present[current_node.depth]:
+								current_node.children=[]
+								jumps_present[current_node.depth] = True
 							moves = self.get_jump_combinations(jumps)
 
 						for move in moves:
@@ -267,7 +274,6 @@ class PlayingAgent:
 								for c in r:
 									if c != 5:
 										board_config.append(c)
-							
 							heuristic_cost = self.players[player1].get_heuristic_cost(board_config)
 
 							if not current_player:
@@ -281,6 +287,7 @@ class PlayingAgent:
 				for x in current_node.children:
 					stack.append(x)
 
+		# print jumps_present
 		# self.Tree.postorder(self.Tree)
 		
 		return self.get_optimum_move(self.Tree,0,depth)
@@ -354,7 +361,7 @@ class PlayingAgent:
 				sys.stdout.flush()
 				# print "\n"
 
-				ret = self.minmax(board,depth=3,player1=player1,player2=player2)
+				ret = self.minmax(board,depth=4,player1=player1,player2=player2)
 				
 				if len(ret[1]) < 2:
 					# print "game end"
@@ -482,7 +489,7 @@ class PlayingAgent:
 			self.players = self.genetic_evolution.get_next_generation()
 			# current_generation = current_generation+1
 
-	def load_saved_evolution(self, file_path = "neural_net/saved_net_"):
+	def load_saved_evolution(self, file_path = "neural_net/saved_net_", evolution=True):
 		print "Loading saved evolution"
 		
 		file = open(file_path+"generations","r")
@@ -497,18 +504,32 @@ class PlayingAgent:
 
 		max_gen = 0
 
+		max_fitness = -500
+		max_fitness_index = 0
+
 		for x in range(0,len(self.players)):
 			self.players[x].model.load_weights(file_path+str(x))
 			gen[x] = int(gen[x])
 			fit[x] = float(fit[x])
 			self.players[x].generation = gen[x]
-			if gen[x] > max_gen:
-				max_gen = gen[x]
+			self.players[x].fitness = fit[x]
+			max_gen = gen[x] if gen[x]>max_gen else max_gen
+
+			# if gen[x] > max_gen:
+			# 	max_gen = gen[x]
+
+			if max_fitness < fit[x]:
+				max_fitness = fit[x]
+				max_fitness_index = x
 
 		self.genetic_evolution.population = self.players
 		self.genetic_evolution.generation = max_gen
 		print "Load Complete"
-		self.players = self.genetic_evolution.get_next_generation()	
+		
+		if evolution:
+			self.players = self.genetic_evolution.get_next_generation()	
+
+		return max_fitness_index
 
 	def save_evolution(self, file_path="neural_net/saved_net_"):
 		print "Saving evolution"
@@ -516,6 +537,8 @@ class PlayingAgent:
 		tags = []
 		generations = []
 		fitness = []
+
+		self.players = sorted(self.players, key=lambda nnet: nnet.fitness, reverse=True)
 
 		for x in range(0,len(self.players)):
 			self.players[x].model.save_weights(file_path+str(x))
@@ -536,29 +559,3 @@ class PlayingAgent:
 		file.close()
 
 		print "Save Complete"
-"""
-ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
-
-ai_agent.init_generation()
-ai_agent.load_saved_evolution()
-ai_agent.trainer()
-
-board = np.array([
-				[ 1, 5, 1, 5, 1, 5, 1, 5],
-				[ 5, 1, 5, 1, 5, 1, 5, 1],
-				[ 1, 5, 1, 5, 1, 5, 1, 5],
-				[ 5, 0, 5, 0, 5, 0, 5, 0],
-				[ 0, 5, 0, 5, 0, 5, 0, 5],
-				[ 5,-1, 5,-1, 5,-1, 5,-1],
-				[-1, 5,-1, 5,-1, 5,-1, 5],
-				[ 5,-1, 5,-1, 5,-1, 5,-1]
-			]);
-
-# print ai_agent.minmax(board,0,2)
-# print my_nn.exec_move(board,(2,0),(3,1))
-# print ai_agent.get_possible_moves(board,0,0,2)
-
-# jumps = [(2, 2), [(4, 0), [(6, 2)], (4, 4), [(6, 2), (6, 6)]]]
-
-# print ai_agent.get_jump_combinations_1(jumps)
-"""

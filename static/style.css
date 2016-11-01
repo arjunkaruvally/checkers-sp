@@ -19,6 +19,10 @@
 	height: 50px;
 	width: 50px;
 	border: solid 2px white;
+	text-align: center;
+	line-height: 50px;
+	font-weight: bold;
+	font-size: 28px;
 }
 
 .player-coin{
@@ -26,4 +30,16 @@
 	border-radius: 38px;
 	height: 50px; width: 50px;
 	border: solid 2px white;
+	text-align: center;
+	line-height: 50px;
+	font-weight: bold;
+	font-size: 28px;
+}
+
+.selected{
+	border: solid blue 2px;
+}
+
+.not-selected{
+	border: none;
 }
