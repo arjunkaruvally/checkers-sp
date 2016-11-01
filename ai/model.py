@@ -536,7 +536,7 @@ class PlayingAgent:
 		file.close()
 
 		print "Save Complete"
-
+"""
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
@@ -561,3 +561,4 @@ board = np.array([
 # jumps = [(2, 2), [(4, 0), [(6, 2)], (4, 4), [(6, 2), (6, 6)]]]
 
 # print ai_agent.get_jump_combinations_1(jumps)
+"""
