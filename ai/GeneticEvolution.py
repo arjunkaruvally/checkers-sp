@@ -22,8 +22,14 @@ class GeneticEvolution:
 		np.random.shuffle(self.population)	
 		return self.population
 
-	def fitness_factor(self,win,moves=1):
+	def fitness_factor(self,win,moves=1,draw=False):
 		fitness = 0.0
+		if draw:
+			if win:
+				fitness = 0.5 + (self.move_fitness_coefficient/moves)
+			else:
+				fitness = 0.5 - (self.move_fitness_coefficient/moves)
+			return fitness
 		if win:
 			fitness = 1.0 + (self.move_fitness_coefficient/moves)
 		else:
