@@ -385,6 +385,11 @@ class PlayingAgent:
 				board = self.invert_board(board)
 				board_f = not board_f
 
+			if board_f:
+				print board
+			else:
+				print self.invert_board(board)
+
 			if draw:
 				print "\n"
 				print "game draw"
@@ -393,6 +398,11 @@ class PlayingAgent:
 				
 				coins1 = self.get_coins(board, positive=True)
 				coins2 = self.get_coins(board, positive=False)
+
+				print "player1: "+str(player1_index)
+				print "coins:   "+str(coins1)
+				print "player2: "+str(player2_index)
+				print "coins:   "+str(coins2)
 
 				if coins1[0] > coins2[0]:
 					print "winner by coins: "+str(player1_index)
@@ -425,10 +435,6 @@ class PlayingAgent:
 						else:
 							print "choosing "+str(player2_index)
 							x.insert(0,player2_index)
-			if board_f:
-				print board
-			else:
-				print self.invert_board(board)
 
 		print "tournament summary"
 		print "winner: "+str(x[0])
