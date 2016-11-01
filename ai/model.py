@@ -385,56 +385,64 @@ class PlayingAgent:
 				board = self.invert_board(board)
 				board_f = not board_f
 
-			if board_f:
-				print board
-			else:
-				print self.invert_board(board)
+			if not board_f:
+				board = self.invert_board(board)
 
 			if draw:
-				print "\n"
-				print "game draw"
-				number_draws = number_draws+1
-				# print board_f
-				
 				coins1 = self.get_coins(board, positive=True)
 				coins2 = self.get_coins(board, positive=False)
 
-				print "player1: "+str(player1_index)
-				print "coins:   "+str(coins1)
-				print "player2: "+str(player2_index)
-				print "coins:   "+str(coins2)
-
-				if coins1[0] > coins2[0]:
-					print "winner by coins: "+str(player1_index)
-					x.insert(0,player1_index)
-					self.players[player1_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
-				elif coins1[0] < coins2[0]:
-					print "winner by coins: "+str(player2_index)
+				if coins1[0] == 0:
+					number_wins = number_wins+1
+					print "winner: "+str(player2_index)
 					x.insert(0,player2_index)
-					self.players[player2_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
-				elif coins1[1] > coins2[1]:
-					print "winner by kings: "+str(player1_index)
+					self.players[player2_index].fitness = self.players[player2_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)		
+				elif coins2[0] == 0:
+					number_wins = number_wins+1
+					print "winner: "+str(player1_index)
 					x.insert(0,player1_index)
-					self.players[player1_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
-				elif coins1[1] < coins2[1]:
-					print "winner by kings: "+str(player2_index)
-					x.insert(0,player2_index)
-					self.players[player2_index].fitness = self.players[player2].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					self.players[player1_index].fitness = self.players[player1_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 				else:
-					if self.players[player1_index].fitness > self.players[player2_index].fitness:
-						print "winner by fitness "+str(player1_index)
+					number_draws = number_draws+1
+					# print board_f
+					print "\n"
+					print "game draw"
+					print "player1: "+str(player1_index)
+					print "coins:   "+str(coins1)
+					print "player2: "+str(player2_index)
+					print "coins:   "+str(coins2)
+
+					if coins1[0] > coins2[0]:
+						print "winner by coins: "+str(player1_index)
 						x.insert(0,player1_index)
-					elif self.players[player1_index].fitness < self.players[player2_index].fitness:
-						print "winner by fitness "+str(player2_index)
+						self.players[player1_index].fitness = self.players[player1_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					elif coins1[0] < coins2[0]:
+						print "winner by coins: "+str(player2_index)
 						x.insert(0,player2_index)
+						self.players[player2_index].fitness = self.players[player2_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					elif coins1[1] > coins2[1]:
+						print "winner by kings: "+str(player1_index)
+						x.insert(0,player1_index)
+						self.players[player1_index].fitness = self.players[player1_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
+					elif coins1[1] < coins2[1]:
+						print "winner by kings: "+str(player2_index)
+						x.insert(0,player2_index)
+						self.players[player2_index].fitness = self.players[player2_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
 					else:
-						prob = np.random.rand()
-						if prob < 0.5:
-							print "choosing "+str(player1_index)
+						if self.players[player1_index].fitness > self.players[player2_index].fitness:
+							print "winner by fitness "+str(player1_index)
 							x.insert(0,player1_index)
-						else:
-							print "choosing "+str(player2_index)
+						elif self.players[player1_index].fitness < self.players[player2_index].fitness:
+							print "winner by fitness "+str(player2_index)
 							x.insert(0,player2_index)
+						else:
+							prob = np.random.rand()
+							if prob < 0.5:
+								print "choosing "+str(player1_index)
+								x.insert(0,player1_index)
+							else:
+								print "choosing "+str(player2_index)
+								x.insert(0,player2_index)
 
 		print "tournament summary"
 		print "winner: "+str(x[0])
