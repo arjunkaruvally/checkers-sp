@@ -9,8 +9,6 @@ var gameboard = [[ 1, 5, 1, 5, 1, 5, 1, 5],
 
 var curPlayer = 0;
 
-window.onload = draw();
-
 function draw() {
 
 	var board = document.getElementById("board");
@@ -43,6 +41,35 @@ function move(id) {
 	
 	if(gameboard[x][y] == -1 && curPlayer == 0) {
 		console.log(x, y);
+		//change the gameboard
+		draw();
 		curPlayer = 1;
+		getAIMove();
 	}
+}
+var gameOb = {"data": gameboard};
+
+function getAIMove() {
+	//send an ajax request to /moves
+	$.ajax({
+	    type: "POST",
+	    url: "/moves",
+	    // The key needs to match your method's input parameter (case-sensitive).
+	    data: gameOb,
+	    contentType: "application/json; charset=utf-8",
+	    dataType: "json",
+	    success: function(data){alert(data);},
+	    failure: function(errMsg) {
+	        alert(errMsg);
+	    }
+});
+
+	//get Response
+	//change gameboard
+	curPlayer = 0;
+	draw();
+}
+
+window.onload = function () {
+	draw();
 }
