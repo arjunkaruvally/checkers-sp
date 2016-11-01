@@ -534,7 +534,7 @@ class PlayingAgent:
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 
 ai_agent.init_generation()
-# ai_agent.load_saved_evolution()
+ai_agent.load_saved_evolution()
 ai_agent.trainer()
 
 board = np.array([
