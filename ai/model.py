@@ -356,7 +356,11 @@ class PlayingAgent:
 					# print "game end"
 					number_wins = number_wins+1
 					print "\n"
+					coins2 = self.get_coins(board, positive=True)
+					coins1 = self.get_coins(board, positive=False)
 					print "winner: "+str(player2)
+					print "winner coins : "+str(coins2)
+					print "loser coins : "+str(coins1)
 					print "moves : "+str(y)
 					# print board
 					x.insert(0,player2)
@@ -394,11 +398,13 @@ class PlayingAgent:
 
 				if coins1[0] == 0:
 					number_wins = number_wins+1
+					print "\n"
 					print "winner: "+str(player2_index)
 					x.insert(0,player2_index)
 					self.players[player2_index].fitness = self.players[player2_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)		
 				elif coins2[0] == 0:
 					number_wins = number_wins+1
+					print "\n"
 					print "winner: "+str(player1_index)
 					x.insert(0,player1_index)
 					self.players[player1_index].fitness = self.players[player1_index].fitness + self.genetic_evolution.fitness_factor(True,moves=y)
