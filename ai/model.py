@@ -20,7 +20,6 @@ import sys
 
 class PlayingAgent:
 	def __init__(self,population_limit=8):
-
 		self.genetic_evolution = GeneticEvolution()
 		self.population_limit = population_limit
 
@@ -259,8 +258,12 @@ class PlayingAgent:
 							move = [(x,y)] + move
 
 							board_config = []
+
+							temp_sim_for_cost = np.array(temp_sim)
+							if not current_player:
+								temp_sim_for_cost = self.invert_board(temp_sim_for_cost)
 							
-							for r in temp_sim:
+							for r in temp_sim_for_cost:
 								for c in r:
 									if c != 5:
 										board_config.append(c)
@@ -314,7 +317,8 @@ class PlayingAgent:
 			player1_index = x.pop()
 			player2_index = x.pop()
 
-			print "\n----------\ngame: "+str(game_number) 
+			print "\n----------\ngame: "+str(game_number)
+			print "generation: "+str(self.genetic_evolution.generation)
 			print "player1: "+str(player1_index)
 			print "player2: "+str(player2_index)
 
@@ -421,16 +425,16 @@ class PlayingAgent:
 						else:
 							print "choosing "+str(player2_index)
 							x.insert(0,player2_index)
-			# if board_f:
-			# 	print board
-			# else:
-			# 	print self.invert_board(board)
+			if board_f:
+				print board
+			else:
+				print self.invert_board(board)
 
 		print "tournament summary"
 		print "winner: "+str(x[0])
 		print "matches played: 7"
-		print "matches drawn: "+number_draws
-		print "matches not draw: "+number_wins
+		print "matches drawn: "+str(number_draws)
+		print "matches not draw: "+str(number_wins)
 
 		# return x[0]
 
@@ -516,6 +520,17 @@ ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tourn
 ai_agent.init_generation()
 ai_agent.load_saved_evolution()
 ai_agent.trainer()
+
+board = np.array([
+				[ 1, 5, 1, 5, 1, 5, 1, 5],
+				[ 5, 1, 5, 1, 5, 1, 5, 1],
+				[ 1, 5, 1, 5, 1, 5, 1, 5],
+				[ 5, 0, 5, 0, 5, 0, 5, 0],
+				[ 0, 5, 0, 5, 0, 5, 0, 5],
+				[ 5,-1, 5,-1, 5,-1, 5,-1],
+				[-1, 5,-1, 5,-1, 5,-1, 5],
+				[ 5,-1, 5,-1, 5,-1, 5,-1]
+			]);
 
 # print ai_agent.minmax(board,0,2)
 # print my_nn.exec_move(board,(2,0),(3,1))
