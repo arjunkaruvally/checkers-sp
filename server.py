@@ -8,6 +8,8 @@ app = Flask(__name__)
 ai_agent = PlayingAgent(population_limit=8) #use powers of two for playing tournaments
 ai_agent.init_generation()	
 best_player_index = ai_agent.load_saved_evolution(file_path="ai/neural_net/saved_net_", evolution=False)
+print "---------------------Computer Player------------------------------"
+print ai_agent.players[best_player_index].tag
 
 """
 The route should return the checkers game page"

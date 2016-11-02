@@ -502,6 +502,11 @@ class PlayingAgent:
 		fit = fit.split(",")
 		file.close()
 
+		file = open(file_path+"attributes","r")
+		tags = file.read()
+		tags = tags.split(",")
+		file.close()		
+
 		max_gen = 0
 
 		max_fitness = -500
@@ -513,6 +518,7 @@ class PlayingAgent:
 			fit[x] = float(fit[x])
 			self.players[x].generation = gen[x]
 			self.players[x].fitness = fit[x]
+			self.players[x].tag = tags[x]
 			max_gen = gen[x] if gen[x]>max_gen else max_gen
 
 			# if gen[x] > max_gen:

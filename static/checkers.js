@@ -225,8 +225,47 @@ function exec_move(start,end)
 		gameboard[start_x+(mov_vec_x/2)][start_y+(mov_vec_y/2)] = 0
 		exec_jump = true
 	}
-
+	checkGameEnd()
 	// console.log(gameboard)
+}
+
+function checkGameEnd(){
+	var playerCoins = 0
+	var playerKings = 0
+	var computerCoins = 0
+	var computerKings = 0
+	
+	for(row in gameboard)
+	{
+		for(col in gameboard[row])
+		{
+			if(gameboard[row][col] > 0 && gameboard[row][col]!=5)
+			{
+				computerCoins++
+				if(gameboard[row][col] == 2)
+				{
+					computerKings++
+				}
+			}
+			if(gameboard[row][col] < 0 && gameboard[row][col]!=5)
+			{
+				playerCoins++
+				if(gameboard[row][col] == -2)
+				{
+					playerKings++
+				}
+			}
+		}
+	}
+
+	if(playerCoins==0)
+	{
+		window.alert("Computer wins")
+	}
+	else if(computerCoins==0)
+	{
+		window.alert("Player wins")
+	}
 }
 
 var gameOb = {"data": gameboard};
@@ -248,6 +287,12 @@ function getAIMove() {
 		    	data = data['moves']
 
 		    	console.log(data)
+
+		    	if(data.length < 2)
+		    	{
+		    		window.alert("Player wins")
+		    	}
+
 
 		    	for(x=0;x<data.length-1;x++)
 		    	{
